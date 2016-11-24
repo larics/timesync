@@ -23,7 +23,7 @@ public:
       pos[nItems] = ((nItems + 1)/2)*((nItems & 1) ? -1 : 1);
       heap[pos[nItems]] = nItems;
     }
-  };
+  }
   
   ~Mediator()
   {
