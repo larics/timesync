@@ -1,6 +1,6 @@
 #include "HoltWinters.h"
 
-HoltWintersSmoothFilter::HoltWintersSmoothFilter(double alfa, double beta, double initialVel) {
+HoltWintersSmoothFilter::HoltWintersSmoothFilter( double initialVel, double alfa, double beta) {
     alfa_ = alfa;
     beta_ = beta;
     reset(initialVel);

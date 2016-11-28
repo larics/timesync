@@ -5,7 +5,7 @@
 class HoltWintersSmoothFilter
 {
 public:
-    HoltWintersSmoothFilter(double alfa = defaultAlfa_, double beta = defaultBeta_, double initialVel = defaultInitialVel_);
+    HoltWintersSmoothFilter( double initialVel = defaultInitialVel_, double alfa = defaultAlfa_, double beta = defaultBeta_);
     // Inserts item
     void insert(const double& v );
 

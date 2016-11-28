@@ -10,8 +10,9 @@
 class TimestampSynchronizer
 {
 public:
-    TimestampSynchronizer(std::string name = std::string() );
-    ~TimestampSynchronizer();
+    class Options;
+
+    TimestampSynchronizer(const Options defaultOptions = Options());
 
     ros::Time sync(double c_sensor, double c_ros_big, unsigned int frameID);
 
@@ -29,32 +30,39 @@ public:
 
     void reset();
 
+    class Options {
+    public:
+        Options() { };
+        bool useMedianFilter_ = true;
+        int medianFilterWindow_ = 3000;
+        bool useHoltWinters_ = true;
+        double alfa_HoltWinters_ = 1e-3;
+        double beta_HoltWinters_ = 1e-4;
+        double alfa_HoltWinters_early_ = 1e-1;
+        double beta_HoltWinters_early_ = 1e-2;
+        bool earlyClamp_ = true;
+        int earlyClampWindow_ = 500;
+        double timeOffset_ = 0.0;
+        double initialB_HoltWinters_ = -3e-7;
+        std::string nameSuffix = std::string();
+    };
+
+
 private:
     double p_sensor_, p_ros_, p_out_;
     unsigned int firstFrameID_;
 
     double startROSTimeBig_;
     double startSensorTime_;
-    Mediator<double>* mediator_;
+    std::unique_ptr<Mediator<double> > pmediator_;
     HoltWintersSmoothFilter holtWinters_;
 
-    double timeOffset_;
     bool firstFrameSet_;
-    bool useMedianFilter_;
-    bool useHoltWinters_;
-    bool earlyClamp_;
-    int earlyClampWindow_;
-
-    double alfa_HoltWinters_;
-    double beta_HoltWinters_;
-    double alfa_HoltWinters_early_;
-    double beta_HoltWinters_early_;
-    double initialB_HoltWinters_;
-    int medianFilterWindow_;
 
     void init();
     void initMediator();
-    ros::NodeHandle *pn_;
+    std::unique_ptr<ros::NodeHandle> pn_;
+    Options options;
 };
 
 #endif

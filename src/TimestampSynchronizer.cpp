@@ -1,47 +1,38 @@
 #include "TimestampSynchronizer.h"
 
 
-TimestampSynchronizer::TimestampSynchronizer(std::string name) {
+TimestampSynchronizer::TimestampSynchronizer(Options defaultOptions) {
 
-    pn_ = new ros::NodeHandle("~timestamp_synchronizer" + (name.empty() ? std::string() :  "_" + name));
-    mediator_ = nullptr;
+    pn_ = std::make_unique<ros::NodeHandle>("~timestamp_synchronizer" + (options.nameSuffix.empty() ? std::string() :  "_" + options.nameSuffix));
 
-    useMedianFilter_ = pn_->param("useMedianFilter", true);
-    medianFilterWindow_ = pn_->param("medianFilterWindow", 3000);
-    useHoltWinters_ = pn_->param("useHoltWinters", true);
-    alfa_HoltWinters_ = pn_->param("alfa_HoltWinters", 1e-3);
-    beta_HoltWinters_ = pn_->param("beta_HoltWinters", 1e-4);
-    alfa_HoltWinters_early_ = pn_->param("alfa_HoltWinters_early", 1e-1);
-    beta_HoltWinters_early_ = pn_->param("beta_HoltWinters_early", 1e-2);
-    earlyClamp_ = pn_->param("earlyClamp", true);
-    earlyClampWindow_ = pn_->param("earlyClampWindow", 500);
-    timeOffset_ = pn_->param("timeOffset", 0.0);
-    initialB_HoltWinters_ = pn_->param("initialB_HoltWinters",-3e-7);
+    options.useMedianFilter_ = pn_->param("useMedianFilter", defaultOptions.useMedianFilter_);
+    options.medianFilterWindow_ = pn_->param("medianFilterWindow", defaultOptions.medianFilterWindow_);
+    options.useHoltWinters_ = pn_->param("useHoltWinters", defaultOptions.useHoltWinters_);
+    options.alfa_HoltWinters_ = pn_->param("alfa_HoltWinters", defaultOptions.alfa_HoltWinters_);
+    options.beta_HoltWinters_ = pn_->param("beta_HoltWinters", defaultOptions.beta_HoltWinters_ );
+    options.alfa_HoltWinters_early_ = pn_->param("alfa_HoltWinters_early", defaultOptions.alfa_HoltWinters_early_);
+    options.beta_HoltWinters_early_ = pn_->param("beta_HoltWinters_early", defaultOptions.beta_HoltWinters_early_);
+    options.earlyClamp_ = pn_->param("earlyClamp", defaultOptions.earlyClamp_);
+    options.earlyClampWindow_ = pn_->param("earlyClampWindow", defaultOptions.earlyClampWindow_);
+    options.timeOffset_ = pn_->param("timeOffset", defaultOptions.timeOffset_);
+    options.initialB_HoltWinters_ = pn_->param("initialB_HoltWinters", defaultOptions.initialB_HoltWinters_);
 
     ROS_INFO("--------------------------");
     ROS_INFO("TimestampSynchronizer init");
-    ROS_INFO("useMedianFilter: %d", useMedianFilter_ );
-    ROS_INFO("medianFilterWindow: %d", medianFilterWindow_ );
-    ROS_INFO("useHoltWinters: %d", useHoltWinters_ );
-    ROS_INFO("alfa_HoltWinters: %lf", alfa_HoltWinters_ );
-    ROS_INFO("beta_HoltWinters: %lf", beta_HoltWinters_ );
-    ROS_INFO("alfa_HoltWinters_early: %lf", alfa_HoltWinters_early_ );
-    ROS_INFO("beta_HoltWinters_early: %lf", beta_HoltWinters_early_ );
-    ROS_INFO("earlyClamp: %d", earlyClamp_ );
-    ROS_INFO("earlyClampWindow: %d", earlyClampWindow_ );
-    ROS_INFO("timeOffset: %lf", timeOffset_ );
-    ROS_INFO("initialB_HoltWinters: %.10lf", initialB_HoltWinters_ );
+    ROS_INFO("useMedianFilter: %d", options.useMedianFilter_ );
+    ROS_INFO("medianFilterWindow: %d", options.medianFilterWindow_ );
+    ROS_INFO("useHoltWinters: %d", options.useHoltWinters_ );
+    ROS_INFO("alfa_HoltWinters: %lf", options.alfa_HoltWinters_ );
+    ROS_INFO("beta_HoltWinters: %lf", options.beta_HoltWinters_ );
+    ROS_INFO("alfa_HoltWinters_early: %lf", options.alfa_HoltWinters_early_ );
+    ROS_INFO("beta_HoltWinters_early: %lf", options.beta_HoltWinters_early_ );
+    ROS_INFO("earlyClamp: %d", options.earlyClamp_ );
+    ROS_INFO("earlyClampWindow: %d", options.earlyClampWindow_ );
+    ROS_INFO("timeOffset: %lf", options.timeOffset_ );
+    ROS_INFO("initialB_HoltWinters: %.10lf", options.initialB_HoltWinters_ );
     ROS_INFO("--------------------------");
 
     init();
-}
-
-TimestampSynchronizer::~TimestampSynchronizer() {
-    if(mediator_ != nullptr) {
-        delete mediator_;
-        mediator_ = nullptr;
-    }
-    delete pn_;
 }
 
 ros::Time TimestampSynchronizer::sync(double c_sensor, double c_ros_big, unsigned int frameID){
@@ -63,24 +54,24 @@ ros::Time TimestampSynchronizer::sync(double c_sensor, double c_ros_big, unsigne
 
     running_t0_hypothesis = current_t0_hypothesis;
 
-    if(useMedianFilter_) {
-        mediator_->insert(running_t0_hypothesis);
-        running_t0_hypothesis = mediator_->getMedian();
+    if(options.useMedianFilter_) {
+        pmediator_->insert(running_t0_hypothesis);
+        running_t0_hypothesis = pmediator_->getMedian();
     }
 
-    if(useHoltWinters_) {
-        if(earlyClamp_ && frame_count < earlyClampWindow_) {
+    if(options.useHoltWinters_) {
+        if(options.earlyClamp_ && frame_count < options.earlyClampWindow_) {
             // smooth interpolation between early and regular alfa/beta
-            double progress = ((double) frame_count) / earlyClampWindow_;
+            double progress = ((double) frame_count) / options.earlyClampWindow_;
             // logistic curve with derivation 0 at finish
             double p = 1-std::exp(0.5*(1-1/(1-progress)));
 
-            holtWinters_.setAlfa(p*alfa_HoltWinters_ + (1-p)*alfa_HoltWinters_early_);
-            holtWinters_.setBeta(p*beta_HoltWinters_ + (1-p)*beta_HoltWinters_early_);
+            holtWinters_.setAlfa(p*options.alfa_HoltWinters_ + (1-p)*options.alfa_HoltWinters_early_);
+            holtWinters_.setBeta(p*options.beta_HoltWinters_ + (1-p)*options.beta_HoltWinters_early_);
         }
         else {
-            holtWinters_.setAlfa(alfa_HoltWinters_);
-            holtWinters_.setBeta(beta_HoltWinters_);
+            holtWinters_.setAlfa(options.alfa_HoltWinters_);
+            holtWinters_.setBeta(options.beta_HoltWinters_);
         }
         holtWinters_.insert(running_t0_hypothesis);
         running_t0_hypothesis = holtWinters_.getFiltered();
@@ -97,38 +88,38 @@ ros::Time TimestampSynchronizer::sync(double c_sensor, double c_ros_big, unsigne
     p_sensor_ = time_sensor;
     p_ros_ = c_ros;
 
-    return ros::Time(c_out + timeOffset_ + startROSTimeBig_);
+    return ros::Time(c_out + options.timeOffset_ + startROSTimeBig_);
 
 }
 
 void TimestampSynchronizer::setTimeOffset(double timeOffset) {
-    TimestampSynchronizer::timeOffset_ = timeOffset;
+    TimestampSynchronizer::options.timeOffset_ = timeOffset;
 }
 
 void TimestampSynchronizer::setMedianFilter(bool useMedianFilter, int medianFilterWindow) {
-    TimestampSynchronizer::useMedianFilter_ = useMedianFilter;
-    TimestampSynchronizer::medianFilterWindow_ = medianFilterWindow;
+    TimestampSynchronizer::options.useMedianFilter_ = useMedianFilter;
+    TimestampSynchronizer::options.medianFilterWindow_ = medianFilterWindow;
     initMediator();
 }
 
 void TimestampSynchronizer::setUseHoltWinters(bool useHoltWinters) {
-    TimestampSynchronizer::useHoltWinters_ = useHoltWinters;
+    TimestampSynchronizer::options.useHoltWinters_ = useHoltWinters;
 }
 
 void TimestampSynchronizer::setAlfa_HoltWinters(double alfa_HoltWinters) {
-    TimestampSynchronizer::alfa_HoltWinters_ = alfa_HoltWinters;
+    TimestampSynchronizer::options.alfa_HoltWinters_ = alfa_HoltWinters;
 }
 
 void TimestampSynchronizer::setBeta_HoltWinters(double beta_HoltWinters) {
-    TimestampSynchronizer::beta_HoltWinters_ = beta_HoltWinters;
+    TimestampSynchronizer::options.beta_HoltWinters_ = beta_HoltWinters;
 }
 
 void TimestampSynchronizer::setAlfa_HoltWinters_early(double alfa_HoltWinters_early) {
-    TimestampSynchronizer::alfa_HoltWinters_early_ = alfa_HoltWinters_early;
+    TimestampSynchronizer::options.alfa_HoltWinters_early_ = alfa_HoltWinters_early;
 }
 
 void TimestampSynchronizer::setBeta_HoltWinters_early(double beta_HoltWinters_early) {
-    TimestampSynchronizer::beta_HoltWinters_early_ = beta_HoltWinters_early;
+    TimestampSynchronizer::options.beta_HoltWinters_early_ = beta_HoltWinters_early;
 }
 
 void TimestampSynchronizer::reset() {
@@ -136,19 +127,16 @@ void TimestampSynchronizer::reset() {
 }
 
 void TimestampSynchronizer::initMediator() {
-    if(mediator_ != nullptr) {
-        delete mediator_;
-    }
-    mediator_ = new Mediator<double>(medianFilterWindow_);
+    pmediator_ = std::make_unique<Mediator<double> >(options.medianFilterWindow_);
 }
 
 void TimestampSynchronizer::init() {
     firstFrameSet_ = false;
     initMediator();
-    holtWinters_.reset(initialB_HoltWinters_);
+    holtWinters_.reset(options.initialB_HoltWinters_);
 }
 
 void TimestampSynchronizer::setEarlyClamp(bool earlyClamp, int earlyClampWindow) {
-    TimestampSynchronizer::earlyClamp_ = earlyClamp;
-    TimestampSynchronizer::earlyClampWindow_ = earlyClampWindow;
+    TimestampSynchronizer::options.earlyClamp_ = earlyClamp;
+    TimestampSynchronizer::options.earlyClampWindow_ = earlyClampWindow;
 }
