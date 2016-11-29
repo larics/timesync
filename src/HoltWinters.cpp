@@ -6,7 +6,6 @@ HoltWintersSmoothFilter::HoltWintersSmoothFilter( double initialVel, double alfa
     reset(initialVel);
 }
 
-// Inserts item
 void HoltWintersSmoothFilter::insert(const double& v )
 {
     double s_prev = s_;
@@ -15,12 +14,14 @@ void HoltWintersSmoothFilter::insert(const double& v )
         gotFirst_ = true;
     }
     else {
+        // update the estimate
         s_ = alfa_ * v + (1 - alfa_) * (s_ + b_);
+        // update the estimate of the derivative
         b_ = beta_ * (s_ - s_prev) + (1 - beta_) * b_;
     }
 }
 
-// Returns current smoothed value
+// Returns the current smoothed value
 double HoltWintersSmoothFilter::getFiltered() {
     return s_;
 }

@@ -2,14 +2,20 @@
 #define HOLTWINTERS_H
 #include <ros/ros.h>
 
+/*! This class implements a recursive exponential smoothing filter which
+ *  also estimates the derivative of the signal in order to produce
+ *  an estimate without lag in steady state
+ */
 class HoltWintersSmoothFilter
 {
 public:
     HoltWintersSmoothFilter( double initialVel = defaultInitialVel_, double alfa = defaultAlfa_, double beta = defaultBeta_);
-    // Inserts item
+    /*! Inserts the current reading into the filter
+     */
     void insert(const double& v );
 
-    // Returns current smoothed value
+    /*! Returns the current smoothed value
+     */
     double getFiltered();
 
     void reset(double initialVel = defaultInitialVel_);

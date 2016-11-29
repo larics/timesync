@@ -1,5 +1,5 @@
 %% perform filtering with median and Holt-Winters
-median_window_size = 3000;
+median_window_size = 1500;
 
 sensor_framerate = 200;  % for adjusting X axis to seconds
 
@@ -22,8 +22,8 @@ initial_b = -3.4e-7;
 % beta = 0.0001;
 % 
 % clamp_time = 500;
-% early_alfa = 0.1;
-% early_beta = 0.0;
+% early_alfa_start = 0.1;
+% early_beta_start = 0.0;
 % 
 % use_med_filtering = true;
 % initial_b = -3e-7;
@@ -55,9 +55,6 @@ for i=2:n
     else
       s(i)=alfa*med_filtered(i)+(1-alfa)*(s(i-1)+b(i-1));
       b(i)=beta*(s(i)-s(i-1))+(1-beta)*b(i-1);
-      
-        used_alpha(i)=alfa;
-        used_beta(i)=beta;
     end
 end
 %s(1:clamp_time) = med_filtered(1:clamp_time);
