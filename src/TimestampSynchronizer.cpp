@@ -43,35 +43,38 @@ TimestampSynchronizer::TimestampSynchronizer(Options defaultOptions) {
     init();
 }
 
-double TimestampSynchronizer::sync(double currentSensorTime, double currentRosTime, unsigned int seqNumber){
-    double mean_estimated_t0_hypothesis;
+double TimestampSynchronizer::sync(double currentSensorTime, double currentRosTime, unsigned int seqNumber_external){
 
     if(!firstFrameSet_) {
-        firstSeqNumber_ = seqNumber;
+        seqCounter_ = 0;
         firstFrameSet_ = true;
 
         startSensorTime_ = currentSensorTime;
         startRosTimeBig_ = currentRosTime;
     }
 
-    double c_ros = currentRosTime - startRosTimeBig_;
-    unsigned int seq_count = seqNumber - firstSeqNumber_;
+    // subtract starting values because we need to work with small numbers,
+    // or else we will lose precision
+    currentRosTime = currentRosTime - startRosTimeBig_;
+    currentSensorTime = currentSensorTime - startSensorTime_;
 
-    double time_sensor = currentSensorTime - startSensorTime_;
-    double current_t0_hypothesis = c_ros - time_sensor;
+    // the basic idea of the timestamp correction algorithm: by estimating t0 (system clock - sensor clock) 
+    // we eliminate the effects of both the system clock jitter and system-sensor clock drift
+    double currentHypothesis_t0 = currentRosTime - currentSensorTime;
 
-    mean_estimated_t0_hypothesis = current_t0_hypothesis;
+    double meanEstimatedHypothesis_t0 = currentHypothesis_t0;
     
     if(options_.useMedianFilter) {
-        pmediator_->insert(mean_estimated_t0_hypothesis);
-        mean_estimated_t0_hypothesis = pmediator_->getMedian();
+        pmediator_->insert(meanEstimatedHypothesis_t0);
+        meanEstimatedHypothesis_t0 = pmediator_->getMedian();
     }
 
     if(options_.useHoltWinters) {
-        if(options_.earlyClamp && seq_count < options_.earlyClampWindow) {
+        // at the early stage of the algorithm, use larger alfa and beta to initialize the filter faster
+        if(options_.earlyClamp && seqCounter_ < options_.earlyClampWindow) {
             // smooth interpolation between early and regular alfa/beta
-            double progress = ((double) seq_count) / options_.earlyClampWindow;
-            // logistic curve with derivation 0 at finish, p goes from 0 to 1
+            double progress = ((double) seqCounter_) / options_.earlyClampWindow;
+            // progress interpolated with a logistic curve, derivation 0 at finish
             double p = 1-std::exp(0.5*(1-1/(1-progress)));
 
             holtWinters_.setAlfa(p*options_.alfa_HoltWinters + (1-p)*options_.alfa_HoltWinters_early);
@@ -81,29 +84,36 @@ double TimestampSynchronizer::sync(double currentSensorTime, double currentRosTi
             holtWinters_.setAlfa(options_.alfa_HoltWinters);
             holtWinters_.setBeta(options_.beta_HoltWinters);
         }
-        holtWinters_.insert(mean_estimated_t0_hypothesis);
-        mean_estimated_t0_hypothesis = holtWinters_.getFiltered();
+        holtWinters_.insert(meanEstimatedHypothesis_t0);
+        meanEstimatedHypothesis_t0 = holtWinters_.getFiltered();
     }
 
-    double c_out = mean_estimated_t0_hypothesis + time_sensor;
+    double currentOut = meanEstimatedHypothesis_t0 + currentSensorTime;
 
-    double c_err = c_out - c_ros;
+    // add back the subtracted start time, plus an user-configurable offset
+    double finalOut = currentOut + options_.timeOffset + startRosTimeBig_;
+
+    double currentError = currentOut - currentRosTime;
+
     timesync::TimesyncDebug debugMessage;
-    debugMessage.seq = seqNumber;
-    debugMessage.sensorTime = currentSensorTime;
-    debugMessage.rosTime = currentRosTime;
-
+    debugMessage.seq = seqNumber_external;
+    debugMessage.sensor_time = currentSensorTime;
+    debugMessage.ros_time = currentRosTime;
+    debugMessage.corrected_timestamp = finalOut;
     debugPublisher_.publish(debugMessage);
-    ROS_DEBUG("delta_sensor: %.10lf delta_ros: %.10lf delta_out: %.10lf frame_count: %d", time_sensor - p_sensor_, c_ros - p_ros_, c_out - p_out_, seq_count);
-    ROS_DEBUG("SENSOR_TIMESTAMP: %.10lf CUR_HYP: %.10lf", time_sensor, current_t0_hypothesis);
-    ROS_DEBUG("ROS_TIME: %.10lf STAMP: %.10lf ERR: %+.10lf RUN_HYP: %.10lf", c_ros, c_out, c_err, mean_estimated_t0_hypothesis);
+
+    ROS_DEBUG("delta_sensor: %.10lf delta_ros: %.10lf delta_out: %.10lf frame_count: %d", currentSensorTime - previousSensorTime_, currentRosTime - previousRosTime_, currentOut - previousOut_, seqNumber_external);
+    ROS_DEBUG("SENSOR_TIMESTAMP: %.10lf CUR_HYP: %.10lf", currentSensorTime, currentHypothesis_t0);
+    ROS_DEBUG("ROS_TIME: %.10lf STAMP: %.10lf ERR: %+.10lf RUN_HYP: %.10lf", currentRosTime, currentOut, currentError, meanEstimatedHypothesis_t0);
 
     // update previous values, used for calculating deltas
-    p_out_ = c_out;
-    p_sensor_ = time_sensor;
-    p_ros_ = c_ros;
+    previousOut_ = currentOut;
+    previousSensorTime_ = currentSensorTime;
+    previousRosTime_ = currentRosTime;
 
-    return c_out + options_.timeOffset + startRosTimeBig_;
+    seqCounter_++;
+
+    return finalOut;
 
 }
 

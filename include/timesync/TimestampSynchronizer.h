@@ -49,13 +49,12 @@ public:
      *
      *  \param currentSensorTime Time of the current reading, as reported by the sensor.
      *  \param currentRosTime Time of the current reading, as read from the system clock.
-     *  \param seqNumber Sequence number of the current reading. If less than earlyClampWindow readings have
-     *                   passed since the first reading, then the early Alpha and Beta coefficients will be used
-     *                   in the Holt-Winters filter.
-     *
+     *  \param seqNumber_external Sequence number of the current reading. Used for logging purposes only
+     *                            (e.g. to examine if frame drops have occured). TimestampSynchronizer keeps
+                                  its own internal sequence counter.
      *  \return Returns the calculated corrected timestamp.
      */
-    double sync(double currentSensorTime, double currentRosTime, unsigned int seqNumber);
+    double sync(double currentSensorTime, double currentRosTime, unsigned int seqNumber_external);
 
     void setTimeOffset(double timeOffset);
     void setMedianFilter(bool useMedianFilter, int medianFilterWindow = 0);
@@ -100,8 +99,7 @@ public:
 
 
 private:
-    double p_sensor_, p_ros_, p_out_;
-    unsigned int firstSeqNumber_;
+    double previousSensorTime_, previousRosTime_, previousOut_;
 
     double startRosTimeBig_;
     double startSensorTime_;
@@ -109,6 +107,7 @@ private:
     HoltWintersSmoothFilter holtWinters_;
 
     bool firstFrameSet_;
+    unsigned int seqCounter_;
 
     void init();
     void initMediator();
