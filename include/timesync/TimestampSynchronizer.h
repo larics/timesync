@@ -24,12 +24,13 @@
  * - \b ~timeOffset An adjustment constant which is added at the very end to the estimated timestamp
  * - \b ~initialB_HoltWinters The starting value of the derivative estimate
  */
+#include <string>
 
 #include <ros/ros.h>
+
 #include "HoltWinters.h"
 #include "Mediator.h"
-#include <cmath>
-#include <string>
+
 #include <timesync/TimesyncDebug.h>
 
 /*! The timestamp synchronization functionality is implemented in this class
@@ -51,7 +52,8 @@ public:
      *  \param currentRosTime Time of the current reading, as read from the system clock.
      *  \param seqNumber_external Sequence number of the current reading. Used for logging purposes only
      *                            (e.g. to examine if frame drops have occured). TimestampSynchronizer keeps
-                                  its own internal sequence counter.
+     *                             its own internal sequence counter.
+     *
      *  \return Returns the calculated corrected timestamp.
      */
     double sync(double currentSensorTime, double currentRosTime, unsigned int seqNumber_external);
@@ -94,7 +96,6 @@ public:
         int earlyClampWindow = 500;
         double timeOffset = 0.0;
         double initialB_HoltWinters = -3e-7;
-        std::string nameSuffix = std::string();
     };
 
 

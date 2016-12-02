@@ -1,16 +1,15 @@
+#include <cmath>
+
 #include "TimestampSynchronizer.h"
 
 
 TimestampSynchronizer::TimestampSynchronizer(Options defaultOptions) {
 
-    options_.nameSuffix = defaultOptions.nameSuffix;
-
-    // TimestampSynchronizer gets its own namespace, which may have a prefix passed in the Options class
-    pn_ = std::make_unique<ros::NodeHandle>("~timestamp_synchronizer" + (options_.nameSuffix.empty() ? std::string() :  "_" + options_.nameSuffix));
+    // TimestampSynchronizer gets its own private namespace inside of the node private namespace
+    pn_ = std::make_unique<ros::NodeHandle>("~timestamp_synchronizer");
 
     // advertise the debug topic, which publishes the values passed to the sync() method
     debugPublisher_ = pn_->advertise<timesync::TimesyncDebug>("debug_info", 10);
-
     
     // load options from ROS params if available, if not, from default options passed by caller 
     options_.useMedianFilter = pn_->param("useMedianFilter", defaultOptions.useMedianFilter);

@@ -1,9 +1,9 @@
 <package>
   <name>timesync</name>
-  <version>0.0.0</version>
+  <version>1.0.0</version>
   <description>Class for synchronizing sensor timestamps to computer clock</description>
   <author>Juraj Oršulić</author>
-  <maintainer email="juraj.orsulic@gmail.com">Juraj Oršulić</maintainer>
+  <maintainer email="juraj.orsulic@fer.hr">Juraj Oršulić</maintainer>
   <license>Apache 2.0</license>
 
   <build_depend>dynamic_reconfigure</build_depend>

@@ -1,9 +1,9 @@
 #include "HoltWinters.h"
 
-HoltWintersSmoothFilter::HoltWintersSmoothFilter( double initialVel, double alfa, double beta) {
+HoltWintersSmoothFilter::HoltWintersSmoothFilter( double initialB, double alfa, double beta) {
     alfa_ = alfa;
     beta_ = beta;
-    reset(initialVel);
+    reset(initialB);
 }
 
 void HoltWintersSmoothFilter::insert(const double& v )
@@ -26,9 +26,9 @@ double HoltWintersSmoothFilter::getFiltered() {
     return s_;
 }
 
-void HoltWintersSmoothFilter::reset(double initialVel) {
+void HoltWintersSmoothFilter::reset(double initialB) {
     gotFirst_ = false;
-    b_ = initialVel;
+    b_ = initialB;
 }
 
 void HoltWintersSmoothFilter::setAlfa(double alfa) {
