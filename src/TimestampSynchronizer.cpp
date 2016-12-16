@@ -52,6 +52,9 @@ double TimestampSynchronizer::sync(double currentSensorTime, double currentRosTi
         startRosTimeBig_ = currentRosTime;
     }
 
+    double currentRosTimeBig = currentRosTime;
+    double currentSensorTimeBig = currentSensorTime;
+
     // subtract starting values because we need to work with small numbers,
     // or else we will lose precision
     currentRosTime = currentRosTime - startRosTimeBig_;
@@ -96,8 +99,8 @@ double TimestampSynchronizer::sync(double currentSensorTime, double currentRosTi
 
     timesync::TimesyncDebug debugMessage;
     debugMessage.seq = seqNumber_external;
-    debugMessage.sensor_time = currentSensorTime;
-    debugMessage.ros_time = currentRosTime;
+    debugMessage.sensor_time = currentSensorTimeBig;
+    debugMessage.ros_time = currentRosTimeBig;
     debugMessage.corrected_timestamp = finalOut;
     debugPublisher_.publish(debugMessage);
 
