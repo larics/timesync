@@ -112,7 +112,7 @@ private:
 
     void init();
     void initMediator();
-    std::unique_ptr<ros::NodeHandle> pn_;
+    ros::NodeHandle np_;
     ros::Publisher debugPublisher_;
 
     Options options_;

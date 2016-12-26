@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.9)
 project(timesync)
 
 find_package(catkin REQUIRED COMPONENTS dynamic_reconfigure roscpp rospy std_msgs message_generation)
-set(CMAKE_CXX_FLAGS "-std=c++14")
+set(CMAKE_CXX_FLAGS "-std=c++11")
 
 set(timesync_SRCS
         src/HoltWinters.cpp

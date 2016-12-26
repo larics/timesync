@@ -3,26 +3,25 @@
 #include "TimestampSynchronizer.h"
 
 
-TimestampSynchronizer::TimestampSynchronizer(Options defaultOptions) {
+TimestampSynchronizer::TimestampSynchronizer(Options defaultOptions) : np_("~timestamp_synchronizer") {
 
     // TimestampSynchronizer gets its own private namespace inside of the node private namespace
-    pn_ = std::make_unique<ros::NodeHandle>("~timestamp_synchronizer");
 
     // advertise the debug topic, which publishes the values passed to the sync() method
-    debugPublisher_ = pn_->advertise<timesync::TimesyncDebug>("debug_info", 10);
+    debugPublisher_ = np_.advertise<timesync::TimesyncDebug>("debug_info", 10);
     
     // load options from ROS params if available, if not, from default options passed by caller 
-    options_.useMedianFilter = pn_->param("useMedianFilter", defaultOptions.useMedianFilter);
-    options_.medianFilterWindow = pn_->param("medianFilterWindow", defaultOptions.medianFilterWindow);
-    options_.useHoltWinters = pn_->param("useHoltWinters", defaultOptions.useHoltWinters);
-    options_.alfa_HoltWinters = pn_->param("alfa_HoltWinters", defaultOptions.alfa_HoltWinters);
-    options_.beta_HoltWinters = pn_->param("beta_HoltWinters", defaultOptions.beta_HoltWinters);
-    options_.alfa_HoltWinters_early = pn_->param("alfa_HoltWinters_early", defaultOptions.alfa_HoltWinters_early);
-    options_.beta_HoltWinters_early = pn_->param("beta_HoltWinters_early", defaultOptions.beta_HoltWinters_early);
-    options_.earlyClamp = pn_->param("earlyClamp", defaultOptions.earlyClamp);
-    options_.earlyClampWindow = pn_->param("earlyClampWindow", defaultOptions.earlyClampWindow);
-    options_.timeOffset = pn_->param("timeOffset", defaultOptions.timeOffset);
-    options_.initialB_HoltWinters = pn_->param("initialB_HoltWinters", defaultOptions.initialB_HoltWinters);
+    options_.useMedianFilter = np_.param("useMedianFilter", defaultOptions.useMedianFilter);
+    options_.medianFilterWindow = np_.param("medianFilterWindow", defaultOptions.medianFilterWindow);
+    options_.useHoltWinters = np_.param("useHoltWinters", defaultOptions.useHoltWinters);
+    options_.alfa_HoltWinters = np_.param("alfa_HoltWinters", defaultOptions.alfa_HoltWinters);
+    options_.beta_HoltWinters = np_.param("beta_HoltWinters", defaultOptions.beta_HoltWinters);
+    options_.alfa_HoltWinters_early = np_.param("alfa_HoltWinters_early", defaultOptions.alfa_HoltWinters_early);
+    options_.beta_HoltWinters_early = np_.param("beta_HoltWinters_early", defaultOptions.beta_HoltWinters_early);
+    options_.earlyClamp = np_.param("earlyClamp", defaultOptions.earlyClamp);
+    options_.earlyClampWindow = np_.param("earlyClampWindow", defaultOptions.earlyClampWindow);
+    options_.timeOffset = np_.param("timeOffset", defaultOptions.timeOffset);
+    options_.initialB_HoltWinters = np_.param("initialB_HoltWinters", defaultOptions.initialB_HoltWinters);
 
     ROS_DEBUG("--------------------------");
     ROS_DEBUG("TimestampSynchronizer init");
@@ -155,7 +154,7 @@ void TimestampSynchronizer::reset() {
 
 // allocate a Mediator object
 void TimestampSynchronizer::initMediator() {
-    pmediator_ = std::make_unique<Mediator<double> >(options_.medianFilterWindow);
+    pmediator_ = std::unique_ptr<Mediator<double> >(new Mediator<double>(options_.medianFilterWindow));
 }
 
 void TimestampSynchronizer::init() {
