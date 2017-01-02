@@ -1,8 +1,8 @@
 %% perform filtering with median and Holt-Winters
-active_settings = 1;  % 1 - imu, 2 - camera
+active_settings = 3;  % 1 - imu, 2 - camera 3 - laser
 
-clock_readings = numbers_imu(:,2) - numbers_imu(1,2);
-sensor_readings = numbers_imu(:,3) - numbers_imu(1,3);
+clock_readings = numbers(:,2) - numbers(1,2);
+sensor_readings = numbers(:,3) - numbers(1,3);
 current_hyp_t0 = clock_readings - sensor_readings;
 
 switch active_settings
@@ -35,6 +35,21 @@ switch active_settings
 
     use_med_filtering = true;
     initial_b = -3e-7;
+    
+   case 3 % laser
+    median_window_size = 50;
+
+    sensor_framerate = 12.7;
+
+    alfa = 0.002;
+    beta = 0.001;
+
+    clamp_time = 500;
+    early_alfa_start = 0.02;
+    early_beta_start = 0.01;
+
+    use_med_filtering = false;
+    initial_b = 0;
 end
 
 %%%%
@@ -77,12 +92,27 @@ if use_med_filtering
     plot(x, med_filtered);
 end
 plot(x, s);
-%legend('original signal', 'median filtered (input)', 'Holt-Winters filtered')
+if use_med_filtering
+    legend('original t0 (t_{sys} - t_{sensor})', 'median filtered (input)', 'Holt-Winters filtered')
+else
+    legend('original t0 (t_{sys} - t_{sensor})', 'Holt-Winters filtered')
+end
+xlabel('t [seconds]')
 figure(2); 
 hold off;
 plot(x(clamp_time:end), b(clamp_time:end));
 title('estimated drift speed')
+xlabel('t [seconds]')
+ylabel('drift [seconds/sample]')
 figure(3);
 hold off;
 plot(x(clamp_time:end), current_hyp_t0(clamp_time:end)- s(clamp_time:end))
 title('error (current t0 hypothesis - smoothed t0 hypothesis)')
+figure(4);
+hold off
+plot(x(2:end), diff(clock_readings))
+hold on
+plot(x(2:end), diff(s+sensor_readings))
+xlabel('t [seconds]')
+title('inter-sample time delta')
+legend('system clock', 'final filtered timestamp')
