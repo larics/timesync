@@ -9,17 +9,17 @@ if len(sys.argv) < 3:
   print "Output: bag_name.csv"
   exit()
 
-bagName = sys.argv[1]
+input_bag_name = sys.argv[1]
 
 try:
-  input_bag = rosbag.Bag(bagName)
+  input_bag = rosbag.Bag(input_bag_name)
   bag_loaded = True
 except Exception:
-  print "Could not open bag {}".format(bagName)
+  print "Could not open bag {}".format(input_bag_name)
   bag_loaded = False
 
 if bag_loaded:
-  name, ext = os.path.splitext(bagName)
+  name, ext = os.path.splitext(input_bag_name)
 
   out_file_name = "{name}.csv".format(name=name)
   print "Writing to {}".format(out_file_name)

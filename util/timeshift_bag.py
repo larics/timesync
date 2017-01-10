@@ -6,31 +6,32 @@ import os
 
 from sensor_msgs.msg import Image
 
-if len(sys.argv) < 3:
-  print "Usage: {} <bag_name> <timeshift>".format(os.path.basename(sys.argv[0]))
+if len(sys.argv) < 4:
+  print "Usage: {} <bag_name> <topic> <timeshift>".format(os.path.basename(sys.argv[0]))
   exit()
 
-bagName = sys.argv[1]
-timeShift = rospy.Duration(float(sys.argv[2]))
+input_bag_name = sys.argv[1]
+topic_name = sys.argv[2]
+time_shift = rospy.Duration(float(sys.argv[3]))
 
 try:
-  input_bag = rosbag.Bag(bagName)
+  input_bag = rosbag.Bag(input_bag_name)
   bag_loaded = True
 except Exception:
-  print "Could not open bag {}".format(bagName)
+  print "Could not open bag {}".format(input_bag_name)
   bag_loaded = False
 
 if bag_loaded:
-  name, ext = os.path.splitext(os.path.basename(bagName))
-  outBagName = "{name}_timeshifted{ext}".format(name=name, ext=ext)
-  timeshifted_bag = rosbag.Bag(outBagName, 'w')
+  name, ext = os.path.splitext(input_bag_name)
+  output_bag_name = "{name}_timeshifted{ext}".format(name=name, ext=ext)
+  output_bag = rosbag.Bag(output_bag_name, 'w')
 
-  for topic, msg, t in input_bag.read_messages(topics=['/camera/image_raw', '/imu']):
-    if topic == '/camera/image_raw' or topic == '/camera/image_mono':
-      msg.header.stamp += timeShift
-      timeshifted_bag.write(topic, msg, t)
-    if topic == '/imu':
-      timeshifted_bag.write(topic, msg, t)
+  for topic, msg, t in input_bag.read_messages():
+    if topic == topic_name:
+      msg.header.stamp += time_shift
+      output_bag.write(topic, msg, t)
+    else:
+      output_bag.write(topic, msg, t)
 
-  timeshifted_bag.close()
+  output_bag.close()
   input_bag.close()
