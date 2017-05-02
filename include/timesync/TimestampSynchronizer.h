@@ -79,8 +79,7 @@ public:
      *  TimestampSynchronizer class. The ROS parameters will be used if available;
      *  if not, the default options passed to the class during the construction will be used;
      *  if none were passed, the defaults defined in the class header, TimestampSynchronizer.h,
-     *  will be used. The nameSuffix member can be set to add a suffix to the namespace of the
-     *  TimestampSynchronizer.
+     *  will be used.
      */
     class Options {
     public:
