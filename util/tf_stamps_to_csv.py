@@ -7,7 +7,7 @@ import PyKDL
 
 if len(sys.argv) < 4:
   print "Usage: {} <bag_name> <parent frame> <child frame>".format(os.path.basename(sys.argv[0]))
-  print "Output: bag_name.csv"
+  print "Output file: bag_name.csv - each line: <stamp> <yaw angle>"
   exit()
 
 input_bag_name = sys.argv[1]
